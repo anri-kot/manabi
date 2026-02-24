@@ -2,14 +2,14 @@ package com.anrikot.manabi.infra.security;
 
 import java.io.IOException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.anrikot.manabi.domain.User;
-import com.anrikot.manabi.services.UserService;
+import com.anrikot.manabi.repository.UserRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,10 +18,13 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
-    @Autowired
-    private TokenService tokenService;
-    @Autowired
-    private UserService userService;
+    private final TokenService tokenService;
+    private final UserRepository repository;
+
+    public SecurityFilter(TokenService tokenService, UserRepository userService) {
+        this.tokenService = tokenService;
+        this.repository = userService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -30,7 +33,8 @@ public class SecurityFilter extends OncePerRequestFilter {
 
         if (token != null) {
             var username = tokenService.validateToken(token);
-            User user = userService.loadUserByUsername(username);
+            User user = repository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Username not found"));
 
             var auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(auth);

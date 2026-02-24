@@ -11,6 +11,8 @@ import com.anrikot.manabi.domain.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     
     public Optional<User> findByUsername(String username);
+    public long deleteByUsername(String username);
 
     public boolean existsByEmail(String email);
+    public boolean existsByUsername(String username);
 }

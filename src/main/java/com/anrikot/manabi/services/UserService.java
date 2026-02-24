@@ -4,20 +4,27 @@ import java.util.List;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.anrikot.manabi.domain.User;
+import com.anrikot.manabi.dto.AuthDTO;
+import com.anrikot.manabi.dto.EmailRequestDTO;
+import com.anrikot.manabi.dto.PasswordRequestDTO;
 import com.anrikot.manabi.dto.RegisterDTO;
-import com.anrikot.manabi.mappers.UserMapper;
+import com.anrikot.manabi.dto.UserDTO;
 import com.anrikot.manabi.repository.UserRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class UserService implements UserDetailsService {
     private final UserRepository repository;
+    private final PasswordEncoder encoder;
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, PasswordEncoder encoder) {
         this.repository = repository;
+        this.encoder = encoder;
     }
 
     @Override
@@ -26,31 +33,78 @@ public class UserService implements UserDetailsService {
             .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public List<RegisterDTO> findAll() {
+    public List<UserDTO> findAll() {
         return repository.findAll().stream()
-            .map(UserMapper::toDTO)
+            .map(this::toDTO)
             .toList();
     }
+
+    public UserDTO findByUsername(String username) {
+        User user = repository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        return toDTO(user);
+    }
     
-    public RegisterDTO findById(String id) {
-        if (id.isBlank() || id == null) return null;
+    public UserDTO findById(Long id) {
+        if (id == null) return null;
         User user = repository.findById(null)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
-        return UserMapper.toDTO(user);
+        return toDTO(user);
+    }
+
+    @Transactional
+    public UserDTO updateEmail(EmailRequestDTO req, String username) {
+        User u = repository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("Invalid user."));
+        if (repository.existsByEmail(req.email())) throw new RuntimeException("Email already registered.");
+
+        u.setEmail(req.email());
+        repository.save(u);
+        return toDTO(u);
+    }
+
+    @Transactional
+    public void updatePassword(PasswordRequestDTO req, String username) {
+        User u = repository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("Invalid user."));
+        if (!encoder.matches(req.oldPassword(), u.getPassword())) 
+            throw new RuntimeException("Old password is incorrect.");
+
+        String newPassword = encoder.encode(req.oldPassword());
+        u.setPassword(newPassword);
+        repository.save(u);
     }
     
+    @Transactional
     public void save(RegisterDTO user) {
         if (user == null) throw new RuntimeException("User is null");
-        String encryptedPassword = new BCryptPasswordEncoder().encode(user.password());
+        String encryptedPassword = encoder.encode(user.password());
 
-        User u = UserMapper.toEntity(user);
+        User u = new User();
+        u.setEmail(user.email());
+        u.setRole(user.role());
         u.setPassword(encryptedPassword);
 
         repository.save(u);
     }
 
+    @Transactional
+    public void deleteByUsername(AuthDTO login, String username) {
+        User u = repository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("User does not exists."));
+        
+        if (!login.login().equals(username)) throw new RuntimeException("Login username and target username do not match.");
+        if (!encoder.matches(login.password(), u.getPassword())) throw new RuntimeException("Password is incorrect.");
+        
+        repository.deleteByUsername(username);
+    }
+
     public boolean existsByEmail(String email) {
         return repository.existsByEmail(email);
+    }
+
+    private UserDTO toDTO(User entity) {
+        return new UserDTO(entity.getId(), entity.getUsername(), entity.getEmail());
     }
 }

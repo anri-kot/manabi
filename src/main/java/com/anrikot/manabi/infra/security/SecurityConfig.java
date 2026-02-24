@@ -26,7 +26,7 @@ public class SecurityConfig {
             .csrf(cstf -> cstf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/login").permitAll() // TODO: Improve validation
                 .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/focus").hasRole("ADMIN")
                 .anyRequest().authenticated()

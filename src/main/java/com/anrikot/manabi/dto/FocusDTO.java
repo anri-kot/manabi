@@ -1,8 +1,13 @@
 package com.anrikot.manabi.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 public record FocusDTO(
-    Integer id,
+    Long id,
+    @Size(min = 3, max = 100)
+    @NotNull
     String name,
-    Integer parentId
+    Long parentId
 ) {
 }

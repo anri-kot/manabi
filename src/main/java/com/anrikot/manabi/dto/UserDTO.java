@@ -1,24 +1,15 @@
 package com.anrikot.manabi.dto;
 
-import com.anrikot.manabi.domain.UserRole;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record RegisterDTO (
+public record UserDTO(
+    Long id,
     @Size(min = 6, max = 20)
     @NotNull
     String username,
-    @Size(min = 6, max = 20)
-    @NotNull
-    String password,
     @Email
     @NotNull
     String email
-) {
-    // Default role
-    public UserRole role() {
-        return UserRole.USER;
-    }
-}
+) {}
