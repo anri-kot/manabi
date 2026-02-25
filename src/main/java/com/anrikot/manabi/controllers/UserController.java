@@ -1,7 +1,6 @@
 package com.anrikot.manabi.controllers;
 
 import java.net.URI;
-import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,7 +23,7 @@ import com.anrikot.manabi.services.UserService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/users/me")
 public class UserController {
     private final UserService service;
 
@@ -32,14 +31,9 @@ public class UserController {
         this.service = service;
     }
 
-    // TODO: delete later, should not exists after deploy
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAll() {
-        return ResponseEntity.ok(service.findAll());
-    }
-
-    @GetMapping("/me")
     public ResponseEntity<UserDTO> getUser(@AuthenticationPrincipal UserDetails user) {
+        System.out.println(user.getAuthorities());
         return ResponseEntity.ok(service.findByUsername(user.getUsername()));
     }
 
@@ -50,7 +44,7 @@ public class UserController {
         return ResponseEntity.created(uri).body(user);
     }
 
-    @PatchMapping("/me/email")
+    @PatchMapping("/email")
     public ResponseEntity<UserDTO> updateEmail(
             @RequestBody @Valid EmailRequestDTO req,
             @AuthenticationPrincipal UserDetails user) {
@@ -58,7 +52,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/me/password")
+    @PatchMapping("/password")
     public ResponseEntity<Void> updatePassword(
             @RequestBody @Valid PasswordRequestDTO req,
             @AuthenticationPrincipal UserDetails user) {
@@ -66,8 +60,8 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteByUser(@Valid @RequestBody AuthDTO login, @AuthenticationPrincipal UserDetails user) {
+    @DeleteMapping
+    public ResponseEntity<Void> deleteUser(@Valid @RequestBody AuthDTO login, @AuthenticationPrincipal UserDetails user) {
         service.deleteByUsername(login, user.getUsername());
         return ResponseEntity.noContent().build();
     }

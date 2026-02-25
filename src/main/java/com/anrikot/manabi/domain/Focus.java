@@ -38,6 +38,16 @@ public class Focus {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    public Focus() {}
+
+    public Focus(Long id, String name, Focus parent, List<Focus> children, User user) {
+        this.id = id;
+        this.name = name;
+        this.parent = parent;
+        this.children = children;
+        this.user = user;
+    }
+
     public Long getId() {
         return id;
     }

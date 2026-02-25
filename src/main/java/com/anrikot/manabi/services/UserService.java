@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.anrikot.manabi.domain.User;
+import com.anrikot.manabi.domain.UserRole;
 import com.anrikot.manabi.dto.AuthDTO;
 import com.anrikot.manabi.dto.EmailRequestDTO;
 import com.anrikot.manabi.dto.PasswordRequestDTO;
@@ -75,6 +76,14 @@ public class UserService implements UserDetailsService {
         u.setPassword(newPassword);
         repository.save(u);
     }
+
+    @Transactional
+    public void changeRole(Long userId, UserRole newRole) {
+        User u = repository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found."));
+        u.setRole(newRole);
+        repository.save(u);
+    }
     
     @Transactional
     public void save(RegisterDTO user) {
@@ -82,6 +91,7 @@ public class UserService implements UserDetailsService {
         String encryptedPassword = encoder.encode(user.password());
 
         User u = new User();
+        u.setUsername(user.username());
         u.setEmail(user.email());
         u.setRole(user.role());
         u.setPassword(encryptedPassword);
@@ -98,6 +108,14 @@ public class UserService implements UserDetailsService {
         if (!encoder.matches(login.password(), u.getPassword())) throw new RuntimeException("Password is incorrect.");
         
         repository.deleteByUsername(username);
+    }
+
+    @Transactional
+    public void deleteById(Long id) {
+        if (!repository.existsById(id)) {
+            throw new RuntimeException("User does not exist.");
+        }
+        repository.deleteById(id);
     }
 
     public boolean existsByEmail(String email) {

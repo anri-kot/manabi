@@ -22,7 +22,7 @@ import jakarta.validation.Valid;
 
 
 @RestController
-@RequestMapping("/focus/me")
+@RequestMapping("/focus")
 public class FocusController {
     private final FocusService service;
 
@@ -31,6 +31,7 @@ public class FocusController {
     }
 
     @GetMapping
+    // TODO: implement search and pagination
     public ResponseEntity<List<FocusDTO>> getAll(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(service.findAllByUserId(user.getId()));
     }
