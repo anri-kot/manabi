@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.anrikot.manabi.domain.User;
 import com.anrikot.manabi.domain.UserRole;
@@ -14,9 +15,10 @@ import com.anrikot.manabi.dto.EmailRequestDTO;
 import com.anrikot.manabi.dto.PasswordRequestDTO;
 import com.anrikot.manabi.dto.RegisterDTO;
 import com.anrikot.manabi.dto.UserDTO;
+import com.anrikot.manabi.exceptions.BadRequestException;
+import com.anrikot.manabi.exceptions.ConflictException;
+import com.anrikot.manabi.exceptions.ResourceNotFoundException;
 import com.anrikot.manabi.repository.UserRepository;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -42,14 +44,14 @@ public class UserService implements UserDetailsService {
 
     public UserDTO findByUsername(String username) {
         User user = repository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return toDTO(user);
     }
     
     public UserDTO findById(Long id) {
         if (id == null) return null;
         User user = repository.findById(null)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         
         return toDTO(user);
     }
@@ -57,8 +59,8 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserDTO updateEmail(EmailRequestDTO req, String username) {
         User u = repository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("Invalid user."));
-        if (repository.existsByEmail(req.email())) throw new RuntimeException("Email already registered.");
+            .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        if (repository.existsByEmail(req.email())) throw new ConflictException("Email already registered.");
 
         u.setEmail(req.email());
         repository.save(u);
@@ -68,9 +70,9 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void updatePassword(PasswordRequestDTO req, String username) {
         User u = repository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("Invalid user."));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found."));
         if (!encoder.matches(req.oldPassword(), u.getPassword())) 
-            throw new RuntimeException("Old password is incorrect.");
+            throw new BadRequestException("Password is incorrect.");
 
         String newPassword = encoder.encode(req.oldPassword());
         u.setPassword(newPassword);
@@ -80,14 +82,14 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void changeRole(Long userId, UserRole newRole) {
         User u = repository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found."));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found."));
         u.setRole(newRole);
         repository.save(u);
     }
     
     @Transactional
     public void save(RegisterDTO user) {
-        if (user == null) throw new RuntimeException("User is null");
+        if (user == null) throw new BadRequestException("User is null");
         String encryptedPassword = encoder.encode(user.password());
 
         User u = new User();
@@ -102,10 +104,10 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void deleteByUsername(AuthDTO login, String username) {
         User u = repository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User does not exists."));
+            .orElseThrow(() -> new ResourceNotFoundException("User does not exists."));
         
-        if (!login.login().equals(username)) throw new RuntimeException("Login username and target username do not match.");
-        if (!encoder.matches(login.password(), u.getPassword())) throw new RuntimeException("Password is incorrect.");
+        if (!login.login().equals(username)) throw new BadRequestException("Login username and target username do not match.");
+        if (!encoder.matches(login.password(), u.getPassword())) throw new BadRequestException("Password is incorrect.");
         
         repository.deleteByUsername(username);
     }
@@ -113,7 +115,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void deleteById(Long id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("User does not exist.");
+            throw new ResourceNotFoundException("User does not exist.");
         }
         repository.deleteById(id);
     }

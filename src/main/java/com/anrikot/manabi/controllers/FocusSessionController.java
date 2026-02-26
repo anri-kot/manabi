@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.anrikot.manabi.domain.User;
 import com.anrikot.manabi.dto.CreateSessionDTO;
 import com.anrikot.manabi.dto.FocusSessionDTO;
+import com.anrikot.manabi.dto.UpdateFocusSessionDTO;
 import com.anrikot.manabi.services.FocusSessionService;
 
 import jakarta.validation.Valid;
@@ -48,6 +50,12 @@ public class FocusSessionController {
     @PostMapping("/{id}/finish")
     public ResponseEntity<?> finish(@AuthenticationPrincipal User user, @PathVariable Long id) {
         service.finish(id, user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody @Valid UpdateFocusSessionDTO dto, @AuthenticationPrincipal User user) {
+        service.update(id, dto.end(), user.getId());
         return ResponseEntity.noContent().build();
     }
 }

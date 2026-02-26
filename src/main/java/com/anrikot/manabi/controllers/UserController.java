@@ -33,7 +33,6 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<UserDTO> getUser(@AuthenticationPrincipal UserDetails user) {
-        System.out.println(user.getAuthorities());
         return ResponseEntity.ok(service.findByUsername(user.getUsername()));
     }
 

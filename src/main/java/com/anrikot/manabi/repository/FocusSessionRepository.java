@@ -13,4 +13,6 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Long
     public List<FocusSession> findAllByUserId(Long userId);
     public Optional<FocusSession> findByIdAndUserId(Long id, Long userId);
     public List<FocusSession> findAllByFocusIdAndUserId(Long focusId, Long userId);
+
+    boolean existsByUserIdAndEndIsNull(Long userId);
 }
