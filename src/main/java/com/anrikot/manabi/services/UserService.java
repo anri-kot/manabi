@@ -90,6 +90,9 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void save(RegisterDTO user) {
         if (user == null) throw new BadRequestException("User is null");
+        if (repository.existsByEmail(user.email())) throw new ConflictException("Email already in use.");
+        if (repository.existsByUsername(user.username())) throw new ConflictException("Username already in use.");
+
         String encryptedPassword = encoder.encode(user.password());
 
         User u = new User();
